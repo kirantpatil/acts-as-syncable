@@ -98,7 +98,6 @@ class Sync < ActiveRecord::Base
   	   end
       end
       (p.real_id = k['id']) if p.respond_to?(:real_id)
-      puts p.inspect
       p.save
       mapped_ids << {:class_name => p.class.name, :id => k['id'], :real_id => p.id}
       errors << p.errors
@@ -108,7 +107,11 @@ class Sync < ActiveRecord::Base
      x.keys.each do |key|
       begin
       k = x[key]
-      p = Object.const_get(key.camelize).find(k['real_id'] || k['id'] )
+      if !k['real_id']
+       p = Object.const_get(key.camelize).find_by_real_id(k['id'])
+      else
+  	   p = Object.const_get(key.camelize).find(k['real_id'])
+  	  end
       k.each do |nm,vl|
       begin
        p[nm] = vl unless nm == 'id'
@@ -150,6 +153,7 @@ class Sync < ActiveRecord::Base
   
   def enable_all
    Sync.stall_synching = nil
+   true
   end
           
  end
