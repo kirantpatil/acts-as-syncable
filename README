@@ -1,13 +1,102 @@
 ActsAsSyncable
 ==============
 
-Introduction goes here.
+This library was developed as part of Aireo (http://www.aireofs.com).
+It allows synching between two (or many more) Rails applications.
+There are servers and clients, the difference being servers have a controller (as below) and clients call that controller (and also have a 'real_id' attribute).
+The code is complicated (and the documentation is not complete) so it helps if you're an experienced Rails chap!
+You'll also need to allow posted yaml in the server, put this in enviroment.rb:
+ActionController::Base.param_parsers[Mime::YAML] = :yaml
 
+If you come across any problems, email me.
+Also, I'm looking for internships, if you can help or know anyone interested please also email.
+
+ info@eribium.org
+ 
+More docs soon!
 
 Example
 =======
 
-Example goes here.
+# client
+def perform_sync
+ # the cookie is just for authentication
+ # User.current_user is only for my setup, you'll have to find some other way of specifying a last_synched time
+ Sync.do("http://localhost:3000",User.current_user.last_synched,{:conditions => {:for_id => User.current_user.id}},{'Cookie' => ActiveResource::Connection.default_header['Cookie']})
+ Sync.disable_once
+ User.current_user.last_synched = Time.now
+ User.current_user.save
+end
+  
+# server
+class SyncsController < ApplicationController
+ before_filter :http_authenticate
+ 
+ def down
+   head(:error) and return unless session[:client_id]
+   t = Client.find(session[:client_id]).last_synched
+   t = Time.now unless t
+   @result = Sync.down(t)    
+   sync_user
+   render :text => @result.to_yaml
+ end
+ 
+ def up
+  head(:error) and return unless session[:client_id]
+  render :text => Sync.up(params[:syncs]).to_yaml
+ end
+ 
+ private
+ 
+   def sync_user
+    return unless session[:client_id]
+    Client.update(session[:client_id], :last_synched => Time.now)
+    rescue
+   end
+ 
+end
 
+# server login (to specify guid)
 
-Copyright (c) 2007 [name of plugin creator], released under the MIT license
+def login
+ # loads of other stuff
+   if params[:session][:guid]
+    client = Client.find_or_create_by_guid(params[:session][:guid])
+    session[:client_id] = client.id
+    client.last_logged_in = Time.now
+    client.version = params[:session][:version] if params[:session][:version]
+    client.save
+   end
+end
+
+# syncs db structure (on client and server)
+
+  create_table "syncs", :force => true do |t|
+    t.column "crud",        :string,                 :default => "", :null => false
+    t.column "method_id",   :integer,  :limit => 10, :default => 0,  :null => false
+    t.column "created_at",  :datetime,                               :null => false
+    t.column "updated_at",  :datetime,                               :null => false
+    t.column "for_id",      :integer,  :limit => 10, :default => 0,  :null => false
+    t.column "method_type", :string,   :limit => 45, :default => "", :null => false
+    t.column "deleted_id",  :integer,  :limit => 10
+  end
+
+# 'client' db structure (on server)
+
+  create_table "clients", :force => true do |t|
+    t.column "guid",           :string,   :default => "", :null => false
+    t.column "last_logged_in", :datetime
+    t.column "version",        :string
+    t.column "last_synched",   :datetime
+    t.column "created_at",     :datetime,                 :null => false
+    t.column "updated_at",     :datetime,                 :null => false
+  end
+  
+ # Every table on the client side should have a 'real_id' attribute (interger)
+ # The clients and guid bit is to take care of people who have a multiple client apps (but same user associated with them)
+ # Each guid is unique for that client and is associated with a sync time
+ # You can get a guid generator here: http://raa.ruby-lang.org/project/ruby-guid/
+ #
+  
+
+Copyright (c) 2007 Alexander MacCaw, released under the MIT license
