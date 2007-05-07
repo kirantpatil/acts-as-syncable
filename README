@@ -2,10 +2,10 @@ ActsAsSyncable
 ==============
 
 This library was developed as part of Aireo (http://www.aireofs.com).
-It allows synching between two (or many more) Rails applications.
+It allows syncing between two (or many more) Rails applications.
 There are servers and clients, the difference being servers have a controller (as below) and clients call that controller (and also have a 'real_id' attribute).
 The code is complicated (and the documentation is not complete) so it helps if you're an experienced Rails chap!
-You'll also need to allow posted yaml in the server, put this in enviroment.rb:
+You'll also need to allow posted yaml in the server, put this in environment.rb:
 ActionController::Base.param_parsers[Mime::YAML] = :yaml
 
 If you come across any problems, email me.
