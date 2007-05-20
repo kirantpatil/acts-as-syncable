@@ -30,6 +30,10 @@ module ActiveRecord
          Sync.add(Sync::METHOD_DESTROY, self)     
         end
         
+        def sync_options
+         {}
+        end
+        
       end # InstanceMethods
     end # Syncable
   end # Acts
