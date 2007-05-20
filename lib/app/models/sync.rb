@@ -83,12 +83,16 @@ class Sync < ActiveRecord::Base
    destroyed = d.select {|s| s.crud == METHOD_DESTROY}
    
    created.collect! do |s| 
-    Object.const_get(s.method_type).exists?(s.method_id) ?
-    	Hash.from_xml(Object.const_get(s.method_type).find(s.method_id).to_xml) : nil
+    if Object.const_get(s.method_type).exists?(s.method_id)
+     rc = Object.const_get(s.method_type).find(s.method_id)
+     Hash.from_xml(rc.to_xml(rc.sync_options))
+    end
    end
    updated.collect! do |s| 
-    Object.const_get(s.method_type).exists?(s.method_id) ?
-    	Hash.from_xml(Object.const_get(s.method_type).find(s.method_id).to_xml) : nil
+    if Object.const_get(s.method_type).exists?(s.method_id)
+     rc = Object.const_get(s.method_type).find(s.method_id)
+     Hash.from_xml(rc.to_xml(rc.sync_options))
+    end
    end
    destroyed.collect!    {|s| {s.method_type => s.deleted_id} }
    #d.each {|dd| dd.destroy } # More than one sync per user
