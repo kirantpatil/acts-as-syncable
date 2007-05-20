@@ -7,11 +7,17 @@ module ActiveRecord
       end
       
       module ClassMethods
+       	 def sync_options=(d = {})
+            d.delete(:root)
+            super(d)
+  	 end
          def acts_as_syncable(options = {})
             after_create :sync_create
             after_update :sync_update
             after_destroy :sync_destroy
 	    has_many :syncs, :as => :method
+	    cattr_accessor :sync_options
+	    self.sync_options = options
             include ActiveRecord::Acts::Syncable::InstanceMethods        
           end
       end
@@ -28,10 +34,6 @@ module ActiveRecord
         
         def sync_destroy
          Sync.add(Sync::METHOD_DESTROY, self)     
-        end
-        
-        def sync_options
-         {}
         end
         
       end # InstanceMethods

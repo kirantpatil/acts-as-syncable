@@ -85,13 +85,13 @@ class Sync < ActiveRecord::Base
    created.collect! do |s| 
     if Object.const_get(s.method_type).exists?(s.method_id)
      rc = Object.const_get(s.method_type).find(s.method_id)
-     Hash.from_xml(rc.to_xml(rc.sync_options))
+     Hash.from_xml(rc.to_xml(Object.const_get(s.method_type).sync_options))
     end
    end
    updated.collect! do |s| 
     if Object.const_get(s.method_type).exists?(s.method_id)
      rc = Object.const_get(s.method_type).find(s.method_id)
-     Hash.from_xml(rc.to_xml(rc.sync_options))
+     Hash.from_xml(rc.to_xml(Object.const_get(s.method_type).sync_options))
     end
    end
    destroyed.collect!    {|s| {s.method_type => s.deleted_id} }
